@@ -11,22 +11,20 @@
 
 ---
 
-## 😱 The Problem
-
-Most AI tools waste tokens by reading your entire project. Context Optimizer uses a structural graph to fetch only what matters.
-
-![The Token Problem](https://sc01.alicdn.com/kf/S19c0bac015d54cb59f50bf6c198971f7u.png)
-
-*Comparison: Without Graph (13,205 tokens) vs With Graph (1,928 tokens)*
-
----
-
 ## ✨ Why This Exists
 
 Claude has a **200K token context window** — but burning 20K tokens just to show a directory structure is wasteful. This toolkit teaches Claude to **fetch only what it needs**, **compress what it sees**, and **reason structurally** instead of reading raw files.
 
 **No API hacks. No leaked code. No reverse engineering.**  
 Just official Claude features (Custom Instructions + Projects + Knowledge) and a lightweight local indexer.
+
+### 😱 The Problem
+
+Most AI tools waste tokens by reading your entire project. Context Optimizer uses a structural graph to fetch only what matters.
+
+![The Token Problem](https://sc01.alicdn.com/kf/S19c0bac015d54cb59f50bf6c198971f7u.png)
+
+*Comparison: Without Graph (13,205 tokens) vs With Graph (1,928 tokens)*
 
 ---
 
