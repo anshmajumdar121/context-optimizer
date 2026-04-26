@@ -1,63 +1,51 @@
-# 🤝 Contributing to Context Optimizer
+# Contributing to Context Optimizer
 
-Thank you for your interest! This project maintains a **strict clean-room policy** to remain legally and ethically sound.
+Thank you for your interest in improving Context Optimizer! This project maintains a **strict clean-room policy** to remain legally and ethically sound. Please read this guide before submitting anything.
 
-## 📋 Code of Conduct
+## Code of Conduct
 
 By participating, you agree to our [Code of Conduct](CODE_OF_CONDUCT.md). Be respectful, constructive, and inclusive.
 
-## 🚫 What We Do NOT Accept
+## What We Welcome
+
+- **New language support** — Add file extensions and import parsers to `context_mapper.py`
+- **Better import detection** — Improve parsing for existing languages
+- **Documentation improvements** — Clarify confusing sections, fix typos
+- **Bug fixes** — Any reproducible issue you find
+- **Real-world benchmarks** — Token savings measurements from actual codebases
+- **Example workflows** — Show how you use Context Optimizer in your stack
+- **Installer improvements** — Better agent detection, new editor integrations
+
+## What We Do NOT Accept
 
 | Category | Examples |
 |----------|----------|
-| **Leaked code** | Any content from proprietary Anthropic repositories |
-| **Reverse-engineered APIs** | Unofficial endpoints, bypass methods |
-| **Prompt injection attacks** | "Ignore previous instructions" tricks |
-| **Obfuscated scripts** | Minified or encoded malicious code |
-| **Unlicensed dependencies** | Third-party code without compatible licenses |
+| Leaked code | Any content from proprietary Anthropic repositories |
+| Reverse-engineered APIs | Unofficial endpoints, undocumented Claude internals |
+| Prompt injection | "Ignore previous instructions" or jailbreak techniques |
+| Obfuscated scripts | Minified, encoded, or intentionally unreadable code |
+| Unlicensed dependencies | Third-party code without a compatible open-source license |
+| External network calls | Any addition that phones home or calls external APIs at runtime |
 
-## ✅ What We Welcome
-
-- **New language support** — Add extensions to `INDEX_EXTENSIONS`
-- **Better keyword detection** — Improve structural parsing
-- **Documentation improvements** — Clarify confusing sections
-- **Bug fixes** — Any issue you discover
-- **Benchmarks** — Real-world token measurements
-- **Example workflows** — Show how you use it
-
-## 🛠️ Development Setup
+## Development Setup
 
 ```bash
-# Clone your fork
-git clone https://github.com/yourusername/context-optimizer.git
+# Fork and clone
+git clone https://github.com/<your-username>/context-optimizer.git
 cd context-optimizer
 
-# Create a virtual environment (optional)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# No install required — zero external dependencies
+# Python 3.7+ only, pure standard library
 
-# Run tests (manual verification for now)
-python tools/context_mapper.py ./test_project
+# Test the mapper on a small project
+python3 tools/context_mapper.py ./examples
 
-# Make your changes
-# ...
+# Test blast-radius
+python3 tools/context_mapper.py ./examples --blast-radius tools/context_mapper.py
 
-# Run the linter (if you have one)
-# make lint
+# Test the installer (safe, idempotent)
+bash scripts/install.sh /tmp/test-project
 ```
-
-## 📝 Pull Request Process
-
-1. **Fork** the repository
-2. **Create a branch:** `git checkout -b feat/your-feature-name`
-3. **Make changes** with clear commit messages
-4. **Test locally** with at least 3 different codebases
-5. **Update documentation** if you change behavior
-6. **Open a Pull Request** with:
-   - Clear description of changes
-   - Before/after metrics if performance-related
-   - Screenshots for UI changes (none expected)
-7. **Wait for review** (usually within 48 hours)
 
 ## Commit Message Format
 
@@ -69,39 +57,76 @@ Longer explanation if needed.
 Fixes #123
 ```
 
-**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+| Type | When to use |
+|------|-------------|
+| `feat` | New feature or language support |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `refactor` | Code change with no behavior change |
+| `perf` | Performance improvement |
+| `test` | Adding or fixing tests |
+| `chore` | Tooling, CI, dependency bumps |
 
 **Examples:**
-- `feat(python): add async function detection`
-- `fix(mapper): handle UTF-16 files gracefully`
-- `docs(readme): add Rust installation instructions`
+- `feat(mapper): add Kotlin import parser`
+- `fix(mapper): handle UTF-16 encoded files gracefully`
+- `docs(readme): add Windows WSL setup instructions`
+- `perf(mapper): skip binary files without reading content`
 
-## 🧪 Testing Guidelines
+## Pull Request Process
 
-Before submitting, verify:
+1. **Fork** the repository and create a branch: `git checkout -b feat/your-feature`
+2. **Make your changes** — keep commits small and focused
+3. **Test locally** against at least 2–3 different codebases of varying sizes
+4. **Update docs** if you change any behavior or add new flags
+5. **Open a Pull Request** with:
+   - A clear description of what changed and why
+   - Before/after token measurements if performance-related
+   - Confirmation that no external dependencies were added
+6. A maintainer will review within 48 hours
+
+## Testing Checklist
+
+Before submitting, run through this manually:
 
 ```bash
-# 1. Index a small project (< 100 files)
-python tools/context_mapper.py ./small-project
-# Check output format
+# 1. Small project (< 50 files)
+python3 tools/context_mapper.py ./examples
+# ✓ CONTEXT_MANIFEST.md generated
+# ✓ .claude/graph.json generated
+# ✓ No crash, no external calls
 
-# 2. Index a medium project (500-2000 files)
-python tools/context_mapper.py ~/your-medium-project
-# Verify no crashes
+# 2. Blast-radius works
+python3 tools/context_mapper.py ./examples --blast-radius tools/context_mapper.py
+# ✓ JSON output with affected/changed/total_files/estimated_tokens
 
-# 3. Run with custom extensions (if you added any)
-python tools/context_mapper.py ./test-project-with-custom-ext
+# 3. Zero dependencies confirmed
+python3 -c "
+import ast, json, os, re, sys
+from pathlib import Path
+from datetime import datetime
+print('All stdlib imports OK')
+"
 
-# 4. Ensure no external dependencies are required
-python -c "import sys; print(sys.version)"  # Should show 3.8+
+# 4. Installer is idempotent
+bash scripts/install.sh /tmp/test1
+bash scripts/install.sh /tmp/test1  # second run should not error or duplicate
 ```
 
-## 📜 License
+## Adding a New Language
 
-By contributing, you agree that your contributions will be licensed under the **MIT License**.
+To add support for a new language in `context_mapper.py`:
 
-## ❓ Questions?
+1. Add the file extension(s) to `EXTENSION_MAP`
+2. Add an import extractor function: `extract_<lang>_imports(content) -> list`
+3. Wire it into `extract_generic_imports()` with the correct language key
+4. Test with a real codebase in that language
+5. Add an entry to the `examples/` folder showing sample output
 
-Open a GitHub Discussion with the `Q&A` label. We're friendly!
+## License
 
-Thank you for making AI-assisted coding more efficient for everyone!
+By contributing, you agree that your contributions will be licensed under the **MIT License** — the same license as this project.
+
+## Questions?
+
+Open a [GitHub Discussion](https://github.com/anshmajumdar121/context-optimizer/discussions) with the `Q&A` label, or email **anshmajumdar100@gmail.com**.
