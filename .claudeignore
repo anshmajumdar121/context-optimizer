@@ -1,0 +1,17 @@
+# Session & history bloat (0 tokens until explicitly requested)
+.claude/completions/
+.claude/sessions/
+docs/archive/
+docs/learnings/
+*.md.backup
+*.original.md
+
+# Build/artifacts (double-guarded)
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+target/
+.next/
+.output/

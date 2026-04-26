@@ -1,3 +1,16 @@
+---
+name: Context Optimizer
+description: Reduce Claude AI token consumption by 5x-27x using prompt-native workflows and structural code manifests. Forces Claude to reason from CONTEXT_MANIFEST.md first, fetch max 3 files per turn, and output in a strict compressed format.
+version: 1.0.0
+author: anshmajumdar121
+license: MIT
+tags:
+  - token-efficiency
+  - context-management
+  - code-review
+  - blast-radius
+  - mcp
+---
 # Context Optimizer — Core Skill
 # Attach to: Claude Desktop/Web/Code → Settings → Custom Instructions
 # Requires: CONTEXT_MANIFEST.md in project root or Claude Project Knowledge

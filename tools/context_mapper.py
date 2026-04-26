@@ -1,273 +1,380 @@
 #!/usr/bin/env python3
 """
-Context Mapper - Generate structural manifests for Claude AI
-
-Zero-dependency Python script that indexes your codebase and generates
-a compressed structural manifest (CONTEXT_MANIFEST.md) for use with
-Claude's Context Optimizer skill.
-
-Usage:
-    python context_mapper.py /path/to/project
-    python context_mapper.py /path/to/project --output custom_manifest.md
-    python context_mapper.py /path/to/project --extensions .py,.js,.ts
-
-Features:
-    - Indexes 15+ programming languages
-    - Extracts function/class definitions and line numbers
-    - Generates compressed manifest (5-15KB for 10K+ files)
-    - Zero external dependencies (Python 3.8+)
+Context Mapper — Manifest Generator + Graph Builder
+Generates CONTEXT_MANIFEST.md and a lightweight dependency graph.
+Zero external dependencies. Pure Python 3.7+.
 """
 
 import os
 import sys
-import argparse
+import json
+import re
+import ast
 from pathlib import Path
 from datetime import datetime
 
-# Configuration - Edit these to customize behavior
-INDEX_EXTENSIONS = {
-    ".py",      # Python
-    ".js",      # JavaScript
-    ".ts",      # TypeScript
-    ".jsx",     # React JavaScript
-    ".tsx",     # React TypeScript
-    ".rs",      # Rust
-    ".go",      # Go
-    ".java",    # Java
-    ".kt",      # Kotlin
-    ".c",       # C
-    ".cpp",     # C++
-    ".h",       # C/C++ headers
-    ".hpp",     # C++ headers
-    ".rb",      # Ruby
-    ".php",     # PHP
-    ".swift",   # Swift
-    ".scala",   # Scala
-    ".r",       # R
-    ".m",       # Objective-C
-    ".cs",      # C#
-}
+# ─────────────────────────────────────────────────────────────
+# CONFIGURATION
+# ─────────────────────────────────────────────────────────────
 
-SKIP_DIRS = {
-    "node_modules",
-    ".git",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "env",
-    ".env",
-    "dist",
-    "build",
-    "target",  # Rust
-    ".idea",
-    ".vscode",
-    "*.egg-info",
-}
+IGNORE_PATTERNS = [
+    ".git", ".gitignore", ".github",
+    "__pycache__", "*.pyc", ".venv", "venv", "env",
+    "*.egg-info", "dist", "build",
+    "node_modules", "package-lock.json", "yarn.lock",
+    ".vscode", ".idea", ".cursor", ".windsurf",
+    "dist", "build", "target", ".next", ".output",
+    "*.min.js", "*.min.css", "*.map",
+    "coverage", ".coverage", "htmlcov",
+    ".DS_Store", "Thumbs.db",
+    ".claude/completions", ".claude/sessions",
+    "docs/archive", "docs/learnings",
+]
 
-# Language-specific keywords to detect
-KEYWORDS = {
-    ".py": ["def ", "class ", "async def "],
-    ".js": ["function ", "const ", "let ", "var ", "class "],
-    ".ts": ["function ", "const ", "let ", "var ", "class ", "interface ", "type "],
-    ".jsx": ["function ", "const ", "let ", "var ", "class "],
-    ".tsx": ["function ", "const ", "let ", "var ", "class ", "interface ", "type "],
-    ".rs": ["fn ", "impl ", "struct ", "trait ", "enum ", "mod "],
-    ".go": ["func ", "type ", "interface ", "struct "],
-    ".java": ["public ", "private ", "protected ", "class ", "interface ", "enum "],
-    ".kt": ["fun ", "class ", "interface ", "object ", "data class "],
-    ".c": ["void ", "int ", "char ", "float ", "double ", "struct "],
-    ".cpp": ["void ", "int ", "char ", "class ", "struct ", "namespace "],
-    ".h": ["void ", "int ", "char ", "class ", "struct "],
-    ".hpp": ["void ", "int ", "char ", "class ", "struct ", "namespace "],
-    ".rb": ["def ", "class ", "module "],
-    ".php": ["function ", "class ", "public ", "private ", "protected "],
-    ".swift": ["func ", "class ", "struct ", "enum ", "protocol "],
-    ".scala": ["def ", "class ", "object ", "trait "],
-    ".r": ["function ", "<- function"],
-    ".m": ["void ", "int ", "char ", "float ", "double ", "@interface "],
-    ".cs": ["void ", "int ", "string ", "public ", "private ", "class ", "interface "],
+MAX_FILE_SIZE = 500_000
+MAX_LINES_PREVIEW = 50
+
+EXTENSION_MAP = {
+    ".py": "python", ".js": "javascript", ".ts": "typescript",
+    ".jsx": "jsx", ".tsx": "tsx", ".go": "go", ".rs": "rust",
+    ".java": "java", ".kt": "kotlin", ".rb": "ruby", ".php": "php",
+    ".cs": "csharp", ".cpp": "cpp", ".c": "c", ".h": "c",
+    ".swift": "swift", ".scala": "scala", ".r": "r", ".m": "objc",
+    ".sh": "bash", ".sql": "sql", ".md": "markdown",
+    ".yaml": "yaml", ".yml": "yaml", ".json": "json",
+    ".toml": "toml", ".dockerfile": "dockerfile", ".tf": "terraform",
 }
 
 
-def should_skip_dir(dirname):
-    """Check if directory should be skipped."""
-    return dirname in SKIP_DIRS or dirname.startswith(".")
+def should_ignore(path: Path, root: Path) -> bool:
+    rel = path.relative_to(root)
+    parts = rel.parts
+    name = path.name
+    for pattern in IGNORE_PATTERNS:
+        if pattern in parts:
+            return True
+        if pattern.startswith("*") and name.endswith(pattern[1:]):
+            return True
+        if name == pattern:
+            return True
+    return False
 
 
-def should_index_file(filename):
-    """Check if file should be indexed based on extension."""
-    return any(filename.endswith(ext) for ext in INDEX_EXTENSIONS)
+def detect_language(path: Path) -> str:
+    ext = path.suffix.lower()
+    if ext in EXTENSION_MAP:
+        return EXTENSION_MAP[ext]
+    if path.name.lower() == "dockerfile":
+        return "dockerfile"
+    if path.name.lower() == "makefile":
+        return "makefile"
+    return "unknown"
 
 
-def get_keywords(filepath):
-    """Get keywords for a specific file extension."""
-    ext = Path(filepath).suffix.lower()
-    return KEYWORDS.get(ext, [])
-
-
-def extract_structure(filepath, project_root):
-    """Extract structural information from a file."""
+def get_file_preview(path: Path, max_lines: int = MAX_LINES_PREVIEW) -> str:
     try:
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-            lines = f.readlines()
-    except Exception as e:
-        return None
-
-    keywords = get_keywords(filepath)
-    if not keywords:
-        return None
-
-    structure = []
-    for i, line in enumerate(lines, 1):
-        stripped = line.strip()
-        # Check if line starts with any keyword
-        if any(stripped.startswith(kw) for kw in keywords):
-            # Extract just the definition line (truncate if too long)
-            definition = stripped[:80] + "..." if len(stripped) > 80 else stripped
-            structure.append((i, definition))
-
-    return structure
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = []
+            for i, line in enumerate(f):
+                if i >= max_lines:
+                    break
+                lines.append(line.rstrip())
+            return "\n".join(lines)
+    except Exception:
+        return "[binary or unreadable]"
 
 
-def generate_manifest(project_path, output_path="CONTEXT_MANIFEST.md"):
-    """Generate the manifest file."""
-    project_path = Path(project_path).resolve()
-    
-    if not project_path.exists():
-        print(f"Error: Path '{project_path}' does not exist.")
-        sys.exit(1)
-    
-    if not project_path.is_dir():
-        print(f"Error: Path '{project_path}' is not a directory.")
-        sys.exit(1)
+def parse_python_imports(path: Path) -> dict:
+    imports = {"modules": [], "names": [], "local": []}
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            tree = ast.parse(f.read())
+    except Exception:
+        return imports
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports["modules"].append(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if node.level > 0:
+                imports["local"].append(f"{'.' * node.level}{module}")
+            else:
+                imports["modules"].append(module.split(".")[0])
+                for alias in node.names:
+                    imports["names"].append(alias.name)
+    return imports
 
-    manifest_lines = [
-        "# Context Manifest",
-        "",
-        f"Generated: {datetime.now().isoformat()}",
-        f"Project: {project_path.name}",
-        f"Root: {project_path}",
-        "",
-        "## Usage",
-        "",
-        "1. Upload this file to a Claude Project (or paste into chat)",
-        "2. Use the one-click prompt from the Context Optimizer repo",
-        "3. Claude will request specific files/lines as needed",
-        "",
-        "---",
-        "",
-    ]
 
-    file_count = 0
-    total_symbols = 0
+def extract_js_imports(content: str) -> list:
+    imports = []
+    for match in re.finditer(r'import\s+.*?\s+from\s+["\']([^"\']+)["\']', content):
+        imports.append(match.group(1))
+    for match in re.finditer(r'require\(["\']([^"\']+)["\']\)', content):
+        imports.append(match.group(1))
+    return imports
 
-    # Walk the directory tree
-    for root, dirs, files in os.walk(project_path):
-        # Skip directories
-        dirs[:] = [d for d in dirs if not should_skip_dir(d)]
-        
-        for filename in files:
-            if not should_index_file(filename):
+
+def extract_go_imports(content: str) -> list:
+    imports = []
+    for match in re.finditer(r'import\s+\((.*?)\)', content, re.DOTALL):
+        block = match.group(1)
+        for line in block.split("\n"):
+            line = line.strip().strip('"')
+            if line and not line.startswith("//"):
+                parts = line.split()
+                if len(parts) >= 1:
+                    imports.append(parts[-1].strip('"'))
+    for match in re.finditer(r'import\s+["\']([^"\']+)["\']', content):
+        imports.append(match.group(1))
+    return imports
+
+
+def extract_rust_imports(content: str) -> list:
+    imports = []
+    for match in re.finditer(r'use\s+([^;]+);', content):
+        imports.append(match.group(1).strip())
+    for match in re.finditer(r'extern\s+crate\s+(\w+)', content):
+        imports.append(match.group(1))
+    return imports
+
+
+def extract_generic_imports(path: Path, content: str, lang: str) -> list:
+    if lang in ("javascript", "typescript", "jsx", "tsx"):
+        return extract_js_imports(content)
+    elif lang == "go":
+        return extract_go_imports(content)
+    elif lang == "rust":
+        return extract_rust_imports(content)
+    elif lang == "python":
+        result = parse_python_imports(path)
+        return result["modules"] + result["local"]
+    return []
+
+
+class DependencyGraph:
+    def __init__(self, root: Path):
+        self.root = root
+        self.nodes = {}
+        self.edges = []
+
+    def scan(self):
+        for path in self.root.rglob("*"):
+            if not path.is_file():
+                continue
+            if should_ignore(path, self.root):
+                continue
+            if path.stat().st_size > MAX_FILE_SIZE:
+                continue
+            lang = detect_language(path)
+            if lang == "unknown":
                 continue
 
-            filepath = Path(root) / filename
-            rel_path = filepath.relative_to(project_path)
-            
-            structure = extract_structure(filepath, project_path)
-            if not structure:
+            rel_path = str(path.relative_to(self.root))
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                lines = content.count("\n") + 1
+            except Exception:
                 continue
 
-            file_count += 1
-            manifest_lines.append(f"📄 {rel_path}")
-            
-            for line_num, definition in structure:
-                total_symbols += 1
-                manifest_lines.append(f"L{line_num}: {definition}")
-            
-            manifest_lines.append("")  # Empty line between files
+            imports = extract_generic_imports(path, content, lang)
+            self.nodes[rel_path] = {
+                "language": lang,
+                "size": path.stat().st_size,
+                "lines": lines,
+                "imports": imports,
+                "preview": get_file_preview(path, 20),
+            }
+            for imp in imports:
+                resolved = self._resolve_import(imp, path, lang)
+                if resolved:
+                    self.edges.append((rel_path, resolved, "imports"))
 
-    # Add footer with stats
-    manifest_lines.extend([
-        "---",
-        "",
-        "## Statistics",
-        "",
-        f"- Files indexed: {file_count}",
-        f"- Symbols found: {total_symbols}",
-        f"- Manifest size: ~{sum(len(line) for line in manifest_lines) // 1024}KB",
-        "",
-        "*Generated by Context Optimizer*",
-    ])
+    def _resolve_import(self, imp: str, from_path: Path, lang: str) -> str:
+        if lang == "python":
+            if imp.startswith("."):
+                base = from_path.parent
+                dots = 0
+                for c in imp:
+                    if c == ".":
+                        dots += 1
+                    else:
+                        break
+                parts = imp[dots:].split(".")
+                for _ in range(dots - 1):
+                    base = base.parent
+                candidate = base / "/".join(parts)
+                if (candidate.with_suffix(".py")).exists():
+                    return str(candidate.with_suffix(".py").relative_to(self.root))
+                if (candidate / "__init__.py").exists():
+                    return str((candidate / "__init__.py").relative_to(self.root))
+            else:
+                top = imp.split(".")[0]
+                for p in self.root.rglob(f"{top}/__init__.py"):
+                    return str(p.relative_to(self.root))
+                for p in self.root.rglob(f"{top}.py"):
+                    return str(p.relative_to(self.root))
 
-    # Write manifest
-    output_file = Path(output_path)
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(manifest_lines))
+        if lang in ("javascript", "typescript", "jsx", "tsx"):
+            if imp.startswith("."):
+                base = from_path.parent
+                candidate = base / imp
+                for ext in ["", ".js", ".ts", ".jsx", ".tsx", "/index.js", "/index.ts"]:
+                    if ext.startswith("/"):
+                        full = candidate / ext[1:]
+                    else:
+                        full = candidate.with_suffix(ext) if ext else candidate
+                    if full.exists():
+                        return str(full.relative_to(self.root))
 
-    print(f"✅ Manifest generated: {output_file}")
-    print(f"   Files indexed: {file_count}")
-    print(f"   Symbols found: {total_symbols}")
-    print(f"   Size: ~{sum(len(line) for line in manifest_lines) // 1024}KB")
-    print("")
-    print("Next steps:")
-    print("1. Upload this file to a Claude Project")
-    print("2. Paste the one-click prompt from the Context Optimizer repo")
-    print("3. Start chatting with optimized token usage!")
+        if lang == "go":
+            if self.root.name in imp:
+                local_part = imp.split(self.root.name, 1)[-1].lstrip("/")
+                candidate = self.root / local_part
+                candidate = candidate.with_suffix(".go")
+                if candidate.exists():
+                    return str(candidate.relative_to(self.root))
+
+        return None
+
+    def get_blast_radius(self, changed_files: list) -> dict:
+        affected = set(changed_files)
+        queue = list(changed_files)
+        visited = set(changed_files)
+        while queue:
+            current = queue.pop(0)
+            for src, dst, _ in self.edges:
+                if dst == current and src not in visited:
+                    visited.add(src)
+                    affected.add(src)
+                    queue.append(src)
+            for src, dst, _ in self.edges:
+                if src == current and dst not in visited:
+                    visited.add(dst)
+                    affected.add(dst)
+                    queue.append(dst)
+        return {
+            "changed": changed_files,
+            "affected": sorted(affected),
+            "total_files": len(affected),
+            "estimated_tokens": len(affected) * 400,
+        }
+
+
+def generate_manifest(root: Path, graph: DependencyGraph) -> str:
+    lines = []
+    lines.append("# CONTEXT_MANIFEST.md")
+    lines.append(f"# Generated: {datetime.now().isoformat()}")
+    lines.append(f"# Project: {root.name}")
+    lines.append(f"# Files Indexed: {len(graph.nodes)}")
+    lines.append(f"# Dependencies Mapped: {len(graph.edges)}")
+    lines.append("")
+    lines.append("## Project Overview")
+    lines.append(f"- **Root:** `{root}`")
+    lines.append(f"- **Total Files:** {len(graph.nodes)}")
+    lines.append(f"- **Total Edges:** {len(graph.edges)}")
+    lines.append("")
+
+    lang_counts = {}
+    for node in graph.nodes.values():
+        lang = node["language"]
+        lang_counts[lang] = lang_counts.get(lang, 0) + 1
+
+    lines.append("## Language Breakdown")
+    for lang, count in sorted(lang_counts.items(), key=lambda x: -x[1]):
+        lines.append(f"- {lang}: {count} files")
+    lines.append("")
+
+    import_counts = {}
+    for _, dst, _ in graph.edges:
+        import_counts[dst] = import_counts.get(dst, 0) + 1
+
+    lines.append("## High-Impact Files (Most Referenced)")
+    for path, count in sorted(import_counts.items(), key=lambda x: -x[1])[:10]:
+        lines.append(f"- `{path}` — referenced by {count} files")
+    lines.append("")
+
+    lines.append("## Directory Structure")
+    dirs = set()
+    for path in graph.nodes:
+        p = Path(path)
+        dirs.add(str(p.parent))
+    for d in sorted(dirs):
+        lines.append(f"- `{d}/`")
+    lines.append("")
+
+    lines.append("## File Registry")
+    lines.append("<!-- Use blast-radius queries to fetch only affected files -->")
+    lines.append("")
+    for path in sorted(graph.nodes):
+        node = graph.nodes[path]
+        lines.append(f"### `{path}`")
+        lines.append(f"- **Language:** {node['language']}")
+        lines.append(f"- **Lines:** {node['lines']}")
+        lines.append(f"- **Size:** {node['size']} bytes")
+        if node["imports"]:
+            lines.append(f"- **Imports:** {', '.join(node['imports'][:5])}")
+        lines.append("- **Preview:**")
+        lines.append("```" + node["language"])
+        lines.append(node["preview"])
+        lines.append("```")
+        lines.append("")
+
+    lines.append("## Dependency Graph")
+    lines.append("```")
+    for src, dst, typ in graph.edges[:200]:
+        lines.append(f"{src} --[{typ}]--> {dst}")
+    if len(graph.edges) > 200:
+        lines.append(f"... ({len(graph.edges) - 200} more edges)")
+    lines.append("```")
+    lines.append("")
+
+    lines.append("## Blast Radius Query Template")
+    lines.append("To find affected files for a change, run:")
+    lines.append("```bash")
+    lines.append("python tools/context_mapper.py /path/to/project --blast-radius file1.py,file2.py")
+    lines.append("```")
+    lines.append("")
+
+    return "\n".join(lines)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate structural manifest for Claude AI Context Optimizer",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s /path/to/project
-  %(prog)s /path/to/project --output my_manifest.md
-  %(prog)s /path/to/project --extensions .py,.js
-        """
-    )
-    
-    parser.add_argument(
-        "project_path",
-        help="Path to the project directory to index"
-    )
-    
-    parser.add_argument(
-        "-o", "--output",
-        default="CONTEXT_MANIFEST.md",
-        help="Output file path (default: CONTEXT_MANIFEST.md)"
-    )
-    
-    parser.add_argument(
-        "-e", "--extensions",
-        help="Comma-separated list of extensions to index (e.g., .py,.js,.ts)"
-    )
-    
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would be indexed without creating the file"
-    )
+    if len(sys.argv) < 2:
+        print("Usage: python context_mapper.py <project_root> [--blast-radius file1,file2,...]")
+        sys.exit(1)
 
-    args = parser.parse_args()
+    root = Path(sys.argv[1]).resolve()
+    if not root.exists():
+        print(f"Error: {root} does not exist")
+        sys.exit(1)
 
-    # Override extensions if provided
-    global INDEX_EXTENSIONS
-    if args.extensions:
-        INDEX_EXTENSIONS = set(ext.strip() for ext in args.extensions.split(","))
-        print(f"Using custom extensions: {INDEX_EXTENSIONS}")
+    print(f"[context-mapper] Scanning {root} ...")
+    graph = DependencyGraph(root)
+    graph.scan()
+    print(f"[context-mapper] Indexed {len(graph.nodes)} files, {len(graph.edges)} edges")
 
-    if args.dry_run:
-        print("Dry run mode - would index:")
-        project_path = Path(args.project_path).resolve()
-        for root, dirs, files in os.walk(project_path):
-            dirs[:] = [d for d in dirs if not should_skip_dir(d)]
-            for filename in files:
-                if should_index_file(filename):
-                    print(f"  {Path(root) / filename}")
-        return
+    if "--blast-radius" in sys.argv:
+        idx = sys.argv.index("--blast-radius")
+        if idx + 1 < len(sys.argv):
+            changed = sys.argv[idx + 1].split(",")
+            result = graph.get_blast_radius(changed)
+            print("\n--- Blast Radius ---")
+            print(json.dumps(result, indent=2))
+            return
 
-    generate_manifest(args.project_path, args.output)
+    manifest = generate_manifest(root, graph)
+    manifest_path = root / "CONTEXT_MANIFEST.md"
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        f.write(manifest)
+    print(f"[context-mapper] Manifest written to {manifest_path}")
+
+    graph_path = root / ".claude" / "graph.json"
+    graph_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(graph_path, "w", encoding="utf-8") as f:
+        json.dump({"nodes": graph.nodes, "edges": graph.edges}, f, indent=2, default=str)
+    print(f"[context-mapper] Graph JSON written to {graph_path}")
 
 
 if __name__ == "__main__":

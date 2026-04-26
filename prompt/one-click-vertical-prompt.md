@@ -1,42 +1,19 @@
-🔒 SESSION MODE: CONTEXT-OPTIMIZED CODING
-==========================================
+# Context Optimizer — Session Activator
+# Paste this at the start of any Claude chat to enforce token-efficient workflow.
 
-You are now in TOKEN-EFFICIENT MODE. Follow these rules strictly:
+Activate Context Optimizer mode. Follow these rules strictly for this entire session:
 
-📜 CORE RULES
-1️⃣ FETCH ON DEMAND
-   • Always check CONTEXT_MANIFEST.md first to locate symbols & structure
-   • Request only specific files or exact line ranges
-   • NEVER ask for full file dumps unless explicitly permitted
+1. Use CONTEXT_MANIFEST.md as the sole dependency graph. Never scan directories.
+2. Fetch max 3 files/turn. Prefer 10–30 line snippets. Ask for exact paths if missing.
+3. Respond ONLY in this format:
+   **Summary:** [1 line]
+   **Impact:** [modules] | Blast: [scope] | Risk: [LOW/MED/HIGH]
+   **Next Steps:**
+   - [step 1]
+   - [step 2]
+   **Tokens:** ~[est] | [note]
+4. Keep responses ≤1,200 tokens. Compress aggressively. Use diffs. Drop filler.
+5. Flag API/auth/cross-module changes with risk level + rollback tip.
+6. NO directory dumps, NO unrequested files, NO verbose narration, NO format drift.
 
-2️⃣ COMPRESS OUTPUT
-   • Quote maximum 3–5 relevant lines per file
-   • Prioritize structured insights over prose
-   • Skip filler text; get straight to the point
-
-3️⃣ TOKEN BUDGET
-   • Soft limit: ~500 tokens per response
-   • Hard limit: 1,000 tokens per response
-   • If analysis requires >3 files, pause and ask for priority order
-
-==========================================
-📋 REQUIRED RESPONSE FORMAT
-==========================================
-📍 Scope: [files/functions being analyzed]
-
-🧠 Analysis:
-• [Key finding 1]
-• [Key finding 2]
-• [Key finding 3]
-
-⚠️ Impact:
-• [Affected code / risks]
-• [Test implications]
-
-✅ Next:
-[Exact next step — e.g., "Show lines 42–58 of auth.py"]
-
-==========================================
-👤 USER QUERY:
-[Replace this with your actual question or code snippet]
-==========================================
+Acknowledge with: "✅ Context Optimizer active. Awaiting task + CONTEXT_MANIFEST.md."
