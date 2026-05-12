@@ -4,7 +4,7 @@ description: "Reduce Claude AI token consumption by 5x-27x using prompt-native w
 user-invokable: true
 argument-hint: "<project-path>"
 license: MIT
-compatibility: "Free: CONTEXT_MANIFEST.md generator (Python 3.7+, zero dependencies). Optional: Claude Projects Knowledge upload. Works with Claude Desktop, Claude Web, Claude Code, Cursor, Windsurf, Cline, Copilot."
+compatibility: "Zero-install. Works anywhere Claude runs — Claude.ai, Claude Desktop, Claude Code, Lovable, Bolt, Cursor, Windsurf, Cline, Copilot. Optional manifest generator needs Python 3.7+ only."
 metadata:
   author: anshmajumdar121
   version: "1.0.0"
@@ -165,3 +165,9 @@ If ANY check fails, fix before presenting. Never exceed the file or token limits
 
 After any context optimization session, always offer:
 "Re-run the mapper to refresh CONTEXT_MANIFEST.md? Use `python3 tools/context_mapper.py <path>`"
+
+## Pairs well with
+
+- **[Caveman](https://github.com/JuliusBrussee/caveman)** — Caveman cuts output tokens, Context Optimizer cuts input tokens. Together = maximum efficiency. See their README for install.
+
+- **[code-review-graph](https://github.com/tirth8205/code-review-graph)** — For large monorepos with git history. Use Context Optimizer everywhere else.
