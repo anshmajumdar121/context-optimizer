@@ -31,6 +31,21 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 | Plan a feature (5+ files) | ~35,000 | ~1,800 | **19x** |
 | Full monorepo analysis | ~80,000 | ~3,500 | **22x** |
 
+## Benchmarks
+
+Real results on **Health Sync** (private fitness app — 130 files, React + Firebase + shadcn/ui):
+
+| Task | With optimizer | Without (full src/) | Reduction |
+|------|----------------|---------------------|-----------|
+| Fix auth bug | 4,629 tokens | 175,229 tokens | **37x** |
+| Debug food scanner | 6,656 tokens | 175,229 tokens | **26x** |
+| Add dashboard widget | 8,805 tokens | 175,229 tokens | **20x** |
+| Update nutrition UI | 13,363 tokens | 175,229 tokens | **13x** |
+| **Average** | | | **~24x** |
+
+*Without optimizer: 130 files loaded into context. With optimizer: manifest-first, 3 files max per task.*
+Reproduce: `python3 tools/context_mapper.py /your/project`
+
 ## How it works in practice
 
 Without Context Optimizer, Claude reads every file it thinks
