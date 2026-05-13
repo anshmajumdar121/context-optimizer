@@ -2,9 +2,7 @@
   "name": "@anshmaj121/context-optimizer",
   "version": "1.0.0",
   "description": "Zero-install context discipline for Claude. 5-27x fewer tokens.",
-  "bin": {
-    "context-optimizer": "./scripts/npx-init.js"
-  },
+  "bin": "./scripts/npx-init.js",
   "files": [
     "scripts/",
     "skill/",
