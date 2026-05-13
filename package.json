@@ -1,5 +1,5 @@
 {
-  "name": "@anshmajumdar121/context-optimizer",
+  "name": "@anshmaj121/context-optimizer",
   "version": "1.0.0",
   "description": "Zero-install context discipline for Claude. 5-27x fewer tokens.",
   "bin": {

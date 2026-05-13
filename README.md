@@ -59,7 +59,7 @@ Fraction of the context.
 
 **Option A — One command (Node 14+):**
 ```bash
-npx @anshmajumdar121/context-optimizer init ./your-project
+npx @anshmaj121/context-optimizer init ./your-project
 ```
 Detects your editor (Cursor, Windsurf, Cline, Claude Code) and installs the skill automatically.
 
