@@ -55,19 +55,19 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 
 ## The Token Problem
 
-![The Token Problem](assets/token-problem.png)
+<p align="center"><img src="assets/token-problem.png" width="900" alt="The Token Problem"/></p>
 
 ## How It Works
 
-![How It Works](assets/how-it-works.png)
+<p align="center"><img src="assets/how-it-works.png" width="900" alt="How It Works"/></p>
 
 ## Works Everywhere Claude Runs
 
-![Works Everywhere](assets/works-everywhere.png)
+<p align="center"><img src="assets/works-everywhere.png" width="900" alt="Works Everywhere"/></p>
 
 ## Get Started in 2 Minutes
 
-![Setup Flow](assets/setup-flow.png)
+<p align="center"><img src="assets/setup-flow.png" width="900" alt="Setup Flow"/></p>
 
 ---
 
