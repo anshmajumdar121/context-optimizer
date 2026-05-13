@@ -67,7 +67,7 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 
 ## Get Started in 2 Minutes
 
-<p align="center"><img src="assets/setup-flow.png" width="900" alt="Setup Flow"/></p>
+<p align="center"><img src="assets/setup-flow.jpg" width="900" alt="Setup Flow"/></p>
 
 ---
 
