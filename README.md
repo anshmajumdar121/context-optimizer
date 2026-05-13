@@ -51,6 +51,26 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 
 *Methodology: file sizes ÷ 4 (standard approximation). "Without" = all files in scope. Reproduce: `python3 tools/context_mapper.py`*
 
+---
+
+## The Token Problem
+
+![The Token Problem](assets/token-problem.png)
+
+## How It Works
+
+![How It Works](assets/how-it-works.png)
+
+## Works Everywhere Claude Runs
+
+![Works Everywhere](assets/works-everywhere.png)
+
+## Get Started in 2 Minutes
+
+![Setup Flow](assets/setup-flow.png)
+
+---
+
 ## How it works in practice
 
 Without Context Optimizer, Claude reads every file it thinks might be relevant — often 10–15 files before answering.
