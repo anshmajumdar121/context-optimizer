@@ -1,0 +1,31 @@
+{
+  "name": "context-optimizer",
+  "version": "1.0.0",
+  "description": "Zero-install context discipline for Claude. 5-27x fewer tokens.",
+  "bin": {
+    "context-optimizer": "./scripts/npx-init.js"
+  },
+  "files": [
+    "scripts/",
+    "skill/",
+    "context-optimizer-skill/",
+    "tools/",
+    "prompt/"
+  ],
+  "keywords": [
+    "claude",
+    "ai",
+    "context",
+    "tokens",
+    "optimization",
+    "llm",
+    "cursor",
+    "windsurf",
+    "cline"
+  ],
+  "author": "anshmajumdar121",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
