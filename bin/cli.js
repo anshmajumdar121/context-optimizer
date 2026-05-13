@@ -25,7 +25,8 @@ function detect(dir) {
   return 'claude';
 }
 
-const projectPath = process.argv[2] || '.';
+const args = process.argv.slice(2).filter(a => a !== 'init');
+const projectPath = args[0] || '.';
 const resolvedPath = path.resolve(projectPath);
 
 if (!fs.existsSync(resolvedPath)) {
