@@ -1,1 +1,2 @@
 scripts/npx-init.js text eol=lf
+bin/cli.js text eol=lf
