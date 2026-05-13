@@ -181,6 +181,16 @@ python3 tools/context_mapper.py /path/to/project --blast-radius src/auth.py,src/
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). PRs welcome — especially for new language parsers in `context_mapper.py`.
 
+## Ecosystem
+
+| Tool | Role |
+|------|------|
+| [Caveman](https://github.com/JuliusBrussee/caveman) | Cuts Claude **output** tokens (~75%) |
+| [context-optimizer](https://github.com/anshmajumdar121/context-optimizer) | Cuts Claude **input** tokens (13–37x) |
+| [code-review-graph](https://github.com/tirth8205/code-review-graph) | Input tokens for large monorepos with git history (8.2x) |
+
+Best results: install Caveman + Context Optimizer together. They solve opposite sides of the same problem.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
