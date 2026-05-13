@@ -1,6 +1,6 @@
 # context-optimizer
 
-**Up to 116x fewer tokens. No setup required to start.**
+**No setup required to start.**
 
 Use the skill alone — paste into Claude, works immediately.  
 Add Python 3.7+ to unlock auto-manifest generation.
