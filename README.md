@@ -24,15 +24,27 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 
 ## Benchmarks
 
-Tested on [shadcn/ui](https://github.com/shadcn-ui/ui) (55 component files, real clone — `context_mapper.py` ran, manifest generated).
+### shadcn/ui — 55 components, 46,071 tokens total
 
-| Scenario | Without | With | Reduction |
-|----------|---------|------|-----------|
-| Single component task | ~46,000 tokens | ~400 tokens | **116x** (ceiling) |
+| Task | Files needed | With optimizer | Without | Reduction |
+|------|-------------|----------------|---------|-----------|
+| Add variant to Button | 1 (`button.tsx`) | 397 tokens | 46,071 | **116x** |
+| Fix focus ring accessibility | 2 (`button` + `input`) | 559 tokens | 46,071 | **82x** |
+| Add size prop to Card | 1 (`card.tsx`) | 538 tokens | 46,071 | **85x** |
+| Update Dialog behavior | 1 (`dialog.tsx`) | 971 tokens | 46,071 | **47x** |
+| **Average** | | | | **~82x** |
 
-*Methodology: file sizes ÷ 4 (standard approximation).  
-"Without" = all files in scope loaded. "With" = manifest + targeted file only. Ceiling case — typical reduction: 5–27x.  
-API-verified numbers coming. Reproduce: `python3 tools/context_mapper.py`*
+### Health Sync — 130 files, React + Firebase
+
+| Task | With optimizer | Without | Reduction |
+|------|----------------|---------|-----------|
+| Fix auth bug | 4,629 tokens | 175,229 | **37x** |
+| Debug food scanner | 6,656 tokens | 175,229 | **26x** |
+| Add dashboard widget | 8,805 tokens | 175,229 | **20x** |
+| Update nutrition UI | 13,363 tokens | 175,229 | **13x** |
+| **Average** | | | **~24x** |
+
+*Methodology: file sizes ÷ 4 (standard approximation). "Without" = all files in scope. Reproduce: `python3 tools/context_mapper.py`*
 
 ## How it works in practice
 
