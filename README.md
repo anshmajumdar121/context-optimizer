@@ -1,6 +1,6 @@
 # context-optimizer
 
-**5–27x fewer tokens. No setup required to start.**
+**Up to 116x fewer tokens. No setup required to start.**
 
 Use the skill alone — no install needed, works anywhere Claude runs.  
 Add Python 3.7+ to unlock auto-manifest generation.
@@ -33,7 +33,21 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 
 ## Benchmarks
 
-Real results on **Health Sync** (private fitness app — 130 files, React + Firebase + shadcn/ui):
+### shadcn/ui — 55 components, 46,071 tokens total
+
+Real results on the [shadcn/ui](https://github.com/shadcn-ui/ui) component library:
+
+| Task | Files needed | With optimizer | Without | Reduction |
+|------|-------------|----------------|---------|-----------|
+| Add variant to Button | 1 (`button.tsx`) | 397 tokens | 46,071 tokens | **116x** |
+| Fix focus ring accessibility | 2 (`button.tsx` + `input.tsx`) | 559 tokens | 46,071 tokens | **82x** |
+| Add size prop to Card | 1 (`card.tsx`) | 538 tokens | 46,071 tokens | **85x** |
+| Update Dialog behavior | 1 (`dialog.tsx`) | 971 tokens | 46,071 tokens | **47x** |
+| **Average** | | | | **~82x** |
+
+*Without optimizer: all 55 components loaded. With optimizer: manifest-first, 1–2 files per task.*
+
+### Health Sync — private app, 130 files, React + Firebase
 
 | Task | With optimizer | Without (full src/) | Reduction |
 |------|----------------|---------------------|-----------|
@@ -44,7 +58,8 @@ Real results on **Health Sync** (private fitness app — 130 files, React + Fire
 | **Average** | | | **~24x** |
 
 *Without optimizer: 130 files loaded into context. With optimizer: manifest-first, 3 files max per task.*
-Reproduce: `python3 tools/context_mapper.py /your/project`
+
+Reproduce either benchmark: `python3 tools/context_mapper.py /your/project`
 
 ## How it works in practice
 
