@@ -59,9 +59,13 @@ Fraction of the context.
 
 **Option A — One command (Node 14+):**
 ```bash
-npx @anshmaj121/context-optimizer init ./your-project
+npm install -g @anshmaj121/context-optimizer
+context-optimizer init ./your-project
 ```
 Detects your editor (Cursor, Windsurf, Cline, Claude Code) and installs the skill automatically.
+
+> **macOS/Linux:** `npx @anshmaj121/context-optimizer init ./your-project` also works.  
+> **Windows:** use the two-line form above — npx has a known bin resolution bug with scoped packages on Windows.
 
 **Option B — Manual:**
 ```bash
