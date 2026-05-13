@@ -1,8 +1,8 @@
 # context-optimizer
 
-**Up to 116x fewer tokens. No setup required to start.**
+**5–27x fewer tokens. No setup required to start.**
 
-Use the skill alone — no install needed, works anywhere Claude runs.  
+Use the skill alone — paste into Claude, works immediately.  
 Add Python 3.7+ to unlock auto-manifest generation.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -22,15 +22,6 @@ Claude has a **200K token context window** — but burning 20K tokens just to sh
 **No API hacks. No leaked code. No reverse engineering.**
 Just official Claude features (Custom Instructions + Projects + Knowledge) and a lightweight local indexer.
 
-## Real-World Savings
-
-| Scenario | Before (tokens) | After (tokens) | Reduction |
-|----------|----------------|----------------|-----------|
-| Code review (3 files) | ~18,000 | ~1,200 | **15x** |
-| Debug a function | ~8,000 | ~400 | **20x** |
-| Plan a feature (5+ files) | ~35,000 | ~1,800 | **19x** |
-| Full monorepo analysis | ~80,000 | ~3,500 | **22x** |
-
 ## Benchmarks
 
 ### shadcn/ui — 55 components, 46,071 tokens total
@@ -45,7 +36,8 @@ Real results on the [shadcn/ui](https://github.com/shadcn-ui/ui) component libra
 | Update Dialog behavior | 1 (`dialog.tsx`) | 971 tokens | 46,071 tokens | **47x** |
 | **Average** | | | | **~82x** |
 
-*Without optimizer: all 55 components loaded. With optimizer: manifest-first, 1–2 files per task.*
+*Without optimizer: all 55 components loaded. With optimizer: manifest-first, 1–2 files per task.*  
+Reproduce: `git clone https://github.com/shadcn-ui/ui && python3 tools/context_mapper.py ui/`
 
 ### Health Sync — private app, 130 files, React + Firebase
 
@@ -59,44 +51,34 @@ Real results on the [shadcn/ui](https://github.com/shadcn-ui/ui) component libra
 
 *Without optimizer: 130 files loaded into context. With optimizer: manifest-first, 3 files max per task.*
 
-Reproduce either benchmark: `python3 tools/context_mapper.py /your/project`
-
 ## How it works in practice
 
-Without Context Optimizer, Claude reads every file it thinks
-might be relevant — often 10–15 files before answering.
+Without Context Optimizer, Claude reads every file it thinks might be relevant — often 10–15 files before answering.
 
-With Context Optimizer, Claude reads the manifest first,
-fetches 2–3 targeted files, then answers. Same result.
-Fraction of the context.
+With Context Optimizer, Claude reads the manifest first, fetches 2–3 targeted files, then answers. Same result. Fraction of the context.
 
 ## Quick Start
 
-**Option A — One command (Node 14+):**
+### Tier 1 — Zero install (30 seconds)
+
+Paste `skill/claude-custom-instructions.md` into Claude Custom Instructions or any chat. Done.
+
+1. Copy the contents of [`skill/claude-custom-instructions.md`](skill/claude-custom-instructions.md)
+2. Paste into Claude Settings → Custom Instructions
+3. Claude immediately starts reasoning from structure, not scanning files
+
+### Tier 2 — With manifest generator (Python 3.7+)
+
 ```bash
 npm install -g @anshmaj121/context-optimizer
 context-optimizer init ./your-project
+python3 tools/context_mapper.py ./your-project
 ```
-Detects your editor (Cursor, Windsurf, Cline, Claude Code) and installs the skill automatically.
+
+Upload the generated `CONTEXT_MANIFEST.md` to a Claude Project as Knowledge. Every session after that runs lean.
 
 > **macOS/Linux:** `npx @anshmaj121/context-optimizer init ./your-project` also works.  
 > **Windows:** use the two-line form above — npx has a known bin resolution bug with scoped packages on Windows.
-
-**Option B — Manual:**
-```bash
-# 1. Clone the repo
-git clone https://github.com/anshmajumdar121/context-optimizer.git
-cd context-optimizer
-
-# 2. Generate a manifest of your project
-python3 tools/context_mapper.py /path/to/your/project
-
-# 3. Upload CONTEXT_MANIFEST.md to a Claude Project (optional but recommended)
-
-# 4. Paste the one-click prompt into Claude Desktop/Web
-cat prompt/one-click-vertical-prompt.md | pbcopy  # macOS
-cat prompt/one-click-vertical-prompt.md | xclip   # Linux
-```
 
 ## How It Works
 
@@ -208,7 +190,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). PRs welcome — especially for new langu
 | Tool | Role |
 |------|------|
 | [Caveman](https://github.com/JuliusBrussee/caveman) | Cuts Claude **output** tokens (~75%) |
-| [context-optimizer](https://github.com/anshmajumdar121/context-optimizer) | Cuts Claude **input** tokens (13–37x) |
+| [context-optimizer](https://github.com/anshmajumdar121/context-optimizer) | Cuts Claude **input** tokens (13–116x) |
 | [code-review-graph](https://github.com/tirth8205/code-review-graph) | Input tokens for large monorepos with git history (8.2x) |
 
 Best results: install Caveman + Context Optimizer together. They solve opposite sides of the same problem.
