@@ -25,7 +25,7 @@ function detect(dir) {
   return 'claude';
 }
 
-const projectPath = process.argv[2] || ".";
+const projectPath = process.argv[2] || '.';
 const resolvedPath = path.resolve(projectPath);
 
 if (!fs.existsSync(resolvedPath)) {
@@ -42,33 +42,24 @@ if (!fs.existsSync(skillSrc)) {
   process.exit(1);
 }
 
-const skill = fs.readFileSync(skillSrc, "utf8");
+const skill = fs.readFileSync(skillSrc, 'utf8');
 fs.mkdirSync(path.dirname(dest), { recursive: true });
 
-if (editor === "claude" && fs.existsSync(dest)) {
-  const existing = fs.readFileSync(dest, "utf8");
-  if (existing.includes("CONTEXT_MANIFEST.md")) {
-    console.log('
-  Already installed in', path.relative(resolvedPath, dest));
+if (editor === 'claude' && fs.existsSync(dest)) {
+  const existing = fs.readFileSync(dest, 'utf8');
+  if (existing.includes('CONTEXT_MANIFEST.md')) {
+    console.log('\n  Already installed in', path.relative(resolvedPath, dest));
   } else {
-    fs.appendFileSync(dest, "
-
-" + skill);
-    console.log('
-  Appended to', path.relative(resolvedPath, dest));
+    fs.appendFileSync(dest, '\n\n' + skill);
+    console.log('\n  Appended to', path.relative(resolvedPath, dest));
   }
 } else {
   fs.writeFileSync(dest, skill);
-  console.log('
-  Written to', path.relative(resolvedPath, dest));
+  console.log('\n  Written to', path.relative(resolvedPath, dest));
 }
 
 console.log('  Editor:   ', EDITOR_NAMES[editor]);
 console.log('  Project:  ', resolvedPath);
-console.log('
-Next — generate your manifest:
-');
+console.log('\nNext — generate your manifest:\n');
 console.log('  python3 tools/context_mapper.py', resolvedPath);
-console.log('
-Then upload CONTEXT_MANIFEST.md to your Claude Project or paste into chat.
-');
+console.log('\nThen upload CONTEXT_MANIFEST.md to your Claude Project or paste into chat.\n');

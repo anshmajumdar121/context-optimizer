@@ -1,6 +1,6 @@
 {
   "name": "@anshmaj121/context-optimizer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Zero-install context discipline for Claude. 5-27x fewer tokens.",
   "bin": {
     "context-optimizer": "bin/cli.js"
