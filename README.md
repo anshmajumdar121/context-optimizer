@@ -24,6 +24,11 @@ Just official Claude features (Custom Instructions + Projects + Knowledge) and a
 
 ## Benchmarks
 
+| Project | Files | Peak reduction | Avg reduction |
+|---------|-------|---------------|---------------|
+| shadcn/ui (public) | 55 components | **116x** | **~82x** |
+| Health Sync (private React + Firebase) | 130 files | **37x** | **~24x** |
+
 ### shadcn/ui — 55 components, 46,071 tokens total
 
 | Task | Files needed | With optimizer | Without | Reduction |
