@@ -55,23 +55,26 @@ With Context Optimizer, Claude reads the manifest first,
 fetches 2–3 targeted files, then answers. Same result.
 Fraction of the context.
 
-## Quick Start (30 seconds)
+## Quick Start
 
+**Option A — One command (Node 14+):**
+```bash
+npx @anshmajumdar121/context-optimizer init ./your-project
+```
+Detects your editor (Cursor, Windsurf, Cline, Claude Code) and installs the skill automatically.
+
+**Option B — Manual:**
 ```bash
 # 1. Clone the repo
 git clone https://github.com/anshmajumdar121/context-optimizer.git
 cd context-optimizer
 
-# 2. Run the installer (idempotent, safe to re-run)
-chmod +x scripts/install.sh
-./scripts/install.sh /path/to/your/project
-
-# 3. Generate a structural manifest of your project
+# 2. Generate a manifest of your project
 python3 tools/context_mapper.py /path/to/your/project
 
-# 4. Upload CONTEXT_MANIFEST.md to a Claude Project (optional but recommended)
+# 3. Upload CONTEXT_MANIFEST.md to a Claude Project (optional but recommended)
 
-# 5. Paste the one-click prompt into Claude Desktop/Web
+# 4. Paste the one-click prompt into Claude Desktop/Web
 cat prompt/one-click-vertical-prompt.md | pbcopy  # macOS
 cat prompt/one-click-vertical-prompt.md | xclip   # Linux
 ```
